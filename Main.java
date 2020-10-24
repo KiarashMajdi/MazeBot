@@ -21,7 +21,7 @@ public class Main{
 
     The robot can only move to positions without obstacles and must stay within the maze. 
 
-    The robot should search for a path from the starting position to the goal position (a solution path)
+    The robot should search for the shortest path from the starting position to the goal position (a solution path)
     until it finds one or until it exhausts all possibilities. 
     
     In addition, it should mark the path it finds (if any) in the maze. 
@@ -178,44 +178,56 @@ public class Main{
 
     
     public static void main(String[] args) throws IOException{
-
-        int[][] directions = new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-        int[] mazeRowAndColumn = countMazeRowAndColumn(new File("Maze6.txt"));
-
-        int[][] maze = new int[mazeRowAndColumn[0]][mazeRowAndColumn[1]];
-        ArrayList<ArrayList<Integer[]>> goneHouses = new ArrayList<ArrayList<Integer[]>>();
-        
-        Integer[] start = new Integer[2];
-        Integer[] goal = new Integer[2];
-
-        boolean[] lastChance = new boolean[]{true};
-        boolean[] targetFound = new boolean[]{false};
-        
+        for (int h = 1; h < 7; h++){
+            System.out.println();
+            System.out.println();
 
         
-        int[] allEmptyHousesCounter = new int[]{0};
-        int[] step = new int[1];
+            int[][] directions = new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+            int[] mazeRowAndColumn = countMazeRowAndColumn(new File("mazes\\Maze" + h + ".txt"));
 
-        readMaze(new File("Maze6.txt"), maze, start, goal);
+            int[][] maze = new int[mazeRowAndColumn[0]][mazeRowAndColumn[1]];
+            ArrayList<ArrayList<Integer[]>> goneHouses = new ArrayList<ArrayList<Integer[]>>();
+            
+            Integer[] start = new Integer[2];
+            Integer[] goal = new Integer[2];
 
-        goneHouses.add(new ArrayList<Integer[]>());
-        goneHouses.get(0).add(start);
+            boolean[] lastChance = new boolean[]{true};
+            boolean[] targetFound = new boolean[]{false};
+            
 
-        countAll(maze, allEmptyHousesCounter, 0, 0);
-        targetFound[0] = goStep(maze, goneHouses, step, allEmptyHousesCounter, targetFound, directions, lastChance);
+            
+            int[] allEmptyHousesCounter = new int[]{0};
+            int[] step = new int[1];
+
+            readMaze(new File("mazes\\Maze" + h + ".txt"), maze, start, goal);
+
+            goneHouses.add(new ArrayList<Integer[]>());
+            goneHouses.get(0).add(start);
+
+            countAll(maze, allEmptyHousesCounter, 0, 0);
+            targetFound[0] = goStep(maze, goneHouses, step, allEmptyHousesCounter, targetFound, directions, lastChance);
 
 
-        printMaze(maze, 0, 0);
-        
-        System.out.println("**********************");
+            printMaze(maze, 0, 0);
 
-        
-        if (targetFound[0]){
-            step[0]--;
-            Integer[] position = goal;
-            declarePath(maze, position, goneHouses, step, targetFound, directions);
+            
+            System.out.println("\n*********************\n");
+
+            
+            if (targetFound[0]){
+                step[0]--;
+                Integer[] position = goal;
+                declarePath(maze, position, goneHouses, step, targetFound, directions);
+            }
+            else{
+                System.out.println("There is no solution to this maze.");
+            }
+            printMaze(maze, 0, 0);
+            System.out.println();
+            System.out.println();
+            System.out.println("#####################################");
         }
-        printMaze(maze, 0, 0);
 
     }
 
@@ -291,12 +303,12 @@ public class Main{
                     start[0] = rowTracker;
                     start[1] = columnTracker;
                 }
-                else if (currentLineCharacters[i] == 'G'){
+                else if (currentLineCharacters[columnTracker] == 'G'){
                     maze[rowTracker][columnTracker] = -3;
                     goal[0] = rowTracker;
                     goal[1] = columnTracker;
                 }
-                else if (currentLineCharacters[i] == '#'){
+                else if (currentLineCharacters[columnTracker] == '#'){
                     maze[rowTracker][columnTracker] = -1;
                 }
 
@@ -311,11 +323,59 @@ public class Main{
 
 
     /*boolean goStep()
+    Description:
+        This procedure numbers the empty houses which are initially 0, to the earliest number of moves required to reach them.
+            In case that the goal is found, it returns true.
+            If there are no houses around the houses step = q to mark with step = q+1 (0 at step = q neighbours),
+                if lastChance is true, it only changes it to false because there is a chance that we just find the goal house around. 
+                if lastChance is false, it returns false.
+            and saves the numeric equivalents in the maze 2d array of type int[][]. 
+        As the maze variable is passed by reference, it just leaves it with the step numbers,
+            so that the declarePath method looks for any house marked with step = n in the neighbourhood of goal
+            and carry up with its own recursion which is dependant on the steps which are marked in the maze variable.
+        
+    Local Variables:
+        allPossible: 
+            Type: ArrayList<Integer>
+            Description: it shows the initial value of all houses in neighbourhood with all houses with step = q.
+                If there are no zeros in this variable, it means that we have not changed any of them,
+                which means that we change the lastChance to false if it's true, and return false if it's false.
+                If there is -3 inside, it means that we found the goal, and we return true.
+        
+    Parameters:
+        
+        int[][] maze:
+            the maze board which is already declared to 0s, -1s, -2 and -3
+            the reference is changed throughout the method.
+        
+        ArrayList<ArrayList<Integer[]>> goneHouses:
+            starting eoth start point, keeps track of every house holding a step number 
+            (for step=1, goneHouses.get(1) holds all [x, y] pairs that are step=1)
+
+        int[] step    
+            An integer to be passed by reference keeping track of the step.        
+
+        int[] allEmptyHousesCounter:
+            An integer to be passed by reference, meant to remain constant after first assignment, 
+            showing number of all houses which are marked 0 at the beginning of the whole program. 
+
+        boolean[] targetFound
+            A boolean to be passed by reference, saying whether the goal is already found or not.
+
+        int[][] directions
+            An array to be remained constant after declaration, facilating recursion in directions.
+
+        boolean[] lastChance
+            A boolean to be passed by reference, explained in the method description.
+
+    Exceptions:
+        Not Applicable.
+
 
 
     */
 
-    public static boolean goStep(int[][] maze, ArrayList<ArrayList<Integer[]>> goneHouses, int[] step, int[] counter, boolean[] targetFound, int[][] directions, boolean[] lastChance){
+    public static boolean goStep(int[][] maze, ArrayList<ArrayList<Integer[]>> goneHouses, int[] step, int[] allEmptyHousesCounter, boolean[] targetFound, int[][] directions, boolean[] lastChance){
         step[0] = goneHouses.size();
 
         goneHouses.add(new ArrayList<Integer[]>());
@@ -326,7 +386,7 @@ public class Main{
             return true;
         }
 
-        if (countPlanned(maze, 0, 0) == counter[0] || !in(allPossible, 0, 0)){
+        if (countPlanned(maze, 0, 0) == allEmptyHousesCounter[0] || !in(allPossible, 0, 0)){
             if (!lastChance[0]){
                 return false;
             }
@@ -335,9 +395,47 @@ public class Main{
 
 
         
-        return goStep(maze, goneHouses, step, counter, targetFound, directions, lastChance);
+        return goStep(maze, goneHouses, step, allEmptyHousesCounter, targetFound, directions, lastChance);
     }
 
+    /* boolean declarePath()
+
+    Description:
+        This procedure starts at the goal house, looks for a neighbour with step = n-1, marks it as -4
+            and redoes the same thing for the house it just marked as -4 (looks for a house with step = n-2 while it's considered to be in a house n-1)
+            and it keeps going until the step = 1 and when it does that step, the step becomes 0 where we return true to end the recursion. 
+        
+    Local Variables:
+        pathPos: it refers to where we are changing to -4. It's a house, initially with step = q-1.
+            An object of type Scanner used for reading every line of the file. 
+
+    Parameters:
+        int[][] maze:
+            the maze board which is already marked by steps, -1s, -2 and -3.
+            the reference is changed throughout the method.
+
+        Integer[] position:
+            refers to the position we are checking for its neighbours.
+
+        ArrayList<ArrayList<Integer[]>> goneHouses:
+            starting eoth start point, keeps track of every house holding a step number 
+            (for step=1, goneHouses.get(1) holds all [x, y] pairs that are step=1)
+
+        int[] step    
+            An integer to be passed by reference keeping track of the step.
+
+        boolean[] targetFound
+            A boolean to be passed by reference, saying whether the goal is already found or not.
+            
+        int[][] directions
+            An array to be remained constant after declaration, facilating recursion in directions.
+
+    Exceptions:
+        Not applicable.
+
+
+
+    */
     public static boolean declarePath(int[][] maze, Integer[] position, ArrayList<ArrayList<Integer[]>> goneHouses, int[] step, boolean[] targetFound, int[][] directions){
 
         
@@ -357,9 +455,37 @@ public class Main{
 
     }
 
-    public static void printMaze(int[][] maze, int h, int i){
-        
-        /*
+    /* void printMaze()
+
+    Description:
+        This procedure recursively iterates through the maze, prints out 
+            "." for any number 0 or bigger,
+            "+" for any -4, 
+            "G" for -3, 
+            "S" for -2 and 
+            "#" for -1.
+        It is also equivalent to a for loop which is also shown in comments.
+
+    Local Variables:
+        Not applicable.
+
+    Parameters:
+        int[][] maze:
+            the maze board which is already marked by steps, -1s, -2 and -3 (also -4 in the final printing).
+
+        int h:
+            always passed 0 in the other methods, for the sake of recursion.
+
+        int i:
+            always passed 0 in the other methods, for the sake of recursion.
+
+    Exceptions:
+        Not applicable.
+
+    for-loop equivalent:
+
+
+        ########################
         for (int h = 0; h < maze.length; h++){
             for (int i = 0; i < maze[h].length; i++){
                 if (maze[h][i] == -1){
@@ -381,7 +507,14 @@ public class Main{
                 
             }
             System.out.println("");
-        }*/
+        }
+        #################################
+    */
+
+    public static void printMaze(int[][] maze, int h, int i){
+
+        
+
 
         if (h == maze.length){
             return;
@@ -422,41 +555,85 @@ public class Main{
     //////////////////////                                                                //////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /*ArrayList<Integer> dirArray()
+    Description:
+        This function changes every 0 neighbour of step=q to step=q+1, 
+        adds the neighbour coordinates to goneHouses.get(q+1),
+        if targetFount is false, returns the value of every neighbour of step=q as 0, -1, -2 or -3 in an ArrayList<Integer>, 
+        or if targetFound is true, positions of a house with step=q-1 should be returned.
+
+        This function has a for-loop equivalent which has been written below.
+
+    */
+
+    /*
+    for (int[] h: directions){
+
+        if (validDir(h, pos, maze)){
+
+            if (!targetFound[0]){
+                values.add(maze[pos[0]+h[0]][pos[1]+h[1]]);
+                if (maze[pos[0]+h[0]][pos[1]+h[1]] == 0){
+                    maze[pos[0]+h[0]][pos[1]+h[1]] = step[0];
+                    goneHouses.get(goneHouses.size() - 1).add(new Integer[]{pos[0] + h[0], pos[1] + h[1]});
+                }
+            }
+            
+            if(targetFound[0]){
+
+                if (maze[pos[0]+h[0]][pos[1]+h[1]] == step[0]){
+
+                    
+                    values.add(h[0] + pos[0]);
+                    values.add(h[1] + pos[1]);
+
+                    return values;
+                }
+
+            }
+        }
+    }
+    return values;
+
+    */
+    
+    /*Parameters:
+
+        int[] pos:
+            the position where we start searching
+        
+        int[][] maze:
+            the maze board
+            the reference is changed throughout the method.
+        
+        ArrayList<ArrayList<Integer[]>> goneHouses:
+            starting with start point, keeps track of every house holding a step number. New houses are added to a new index of this variable.
+            (for step=1, goneHouses.get(1) holds all [x, y] pairs that are step=1)
+
+        int[] step    
+            An integer to be passed by reference keeping track of the step.        
+
+        int[] allEmptyHousesCounter:
+            An integer to be passed by reference, meant to remain constant after first assignment, 
+            showing number of all houses which are marked 0 at the beginning of the whole program. 
+
+        boolean[] targetFound
+            A boolean to be passed by reference, saying whether the goal is already found or not.
+
+        int[][] directions
+            An array to be remained constant after declaration, facilating recursion in directions.
+
+        ArrayList<Integer> values:
+            A static reference to the returned ArrayList
+        int g:
+            for recursion purpose
+    */
+
     
 
     public static ArrayList<Integer> dirArray(Integer[] pos, int[][] maze, ArrayList<ArrayList<Integer[]>> goneHouses, int[] step, boolean[] targetFound, int[][] directions, ArrayList<Integer> values, int g){
         
-
-        /*
-        for (int[] h: directions){
-
-            if (validDir(h, pos, maze)){
-
-                if (!targetFound[0]){
-                    values.add(maze[pos[0]+h[0]][pos[1]+h[1]]);
-                    if (maze[pos[0]+h[0]][pos[1]+h[1]] == 0){
-                        maze[pos[0]+h[0]][pos[1]+h[1]] = step[0];
-                        goneHouses.get(goneHouses.size() - 1).add(new Integer[]{pos[0] + h[0], pos[1] + h[1]});
-                    }
-                }
-                
-                if(targetFound[0]){
-
-                    if (maze[pos[0]+h[0]][pos[1]+h[1]] == step[0]){
-
-                        
-                        values.add(h[0] + pos[0]);
-                        values.add(h[1] + pos[1]);
-
-                        return values;
-                    }
-
-                }
-            }
-        }
-        return values;
-
-        */
+        
 
         if (g == directions.length){
             return values;
@@ -491,7 +668,13 @@ public class Main{
         return dirArray(pos, maze, goneHouses, step, targetFound, directions, values, g);
     }
 
+    /*boolean validDir()
+        returns true if we can do in dir[] way when we are in pos[] square
+        param: dir, pos, maze
+        returns: boolean
+    */
     public static boolean validDir(int[] dir, Integer[] pos, int[][] maze){
+        
 
         if (!(0 <= pos[0] + dir[0] && pos[0] + dir[0] < maze.length) || !(0 <= pos[1] + dir[1] && pos[1] + dir[1] < maze[0].length)){
             return false;
@@ -499,6 +682,12 @@ public class Main{
         return true;
     }
 
+    /*
+        for each house with step=q, does dirArray().
+        parameters: int[][]maze, ArrayList<ArrayList<Integer[]>> goneHouses, int[]step, boolean[]targetFound, int[][]directions, int h, ArrayList<Integer> allPossible
+            h is for recursion purpose
+        returns nothing.
+    */
     public static void doNextStep(int[][]maze, ArrayList<ArrayList<Integer[]>> goneHouses, int[]step, boolean[]targetFound, int[][]directions, int h, ArrayList<Integer> allPossible){
         /*
         for (int h = 0; h < goneHouses.get(step[0] - 1).size(); h++){
@@ -526,6 +715,11 @@ public class Main{
     //////////////////////                                                                //////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /*int[] countMazeRowAndColumn()
+        counts for x and y dimensions of the maze.
+        parameters: file (maze file)
+        returns: Integer[xDimension, yDimension]
+    */
     public static int[] countMazeRowAndColumn(File file) throws IOException{
         Scanner scanner = new Scanner(file);
         char[] a;
@@ -541,28 +735,14 @@ public class Main{
         return new int[]{x, y};
     }
 
-    public static boolean hasOnly(ArrayList<Integer> a, ArrayList<Integer> elements, int h){
-        /*
-        for (int h = 0; h < a.size(); h++){
-            if (!in(elements, a.get(h))){
-                return false;
-            }
-        }
-        return true;
-        */
-
-        if (h == a.size()){
-            return true;
-        }
-
-        if (!in(elements, a.get(h), 0)){
-            return false;
-        }
-
-        h++;
-        return hasOnly(a, elements, h);
-    }
-
+    
+    /*void countAll()
+        counts every house that equals zero (is empty) in maze and assigns it to counter.
+        params: maze, counter, h, i
+            h and i are for recursion purposes
+        returns nothing.
+    
+    */
     public static void countAll(int[][] maze, int[] counter, int h, int i){
         /*
         for (int h = 0; h < maze.length; h++){
@@ -591,6 +771,14 @@ public class Main{
             countAll(maze, counter, h, i);
         }
     }
+
+    /*int countPlanned()
+        counts every house that is bigger than zero (is already stepped) in maze and returns it.
+        params: maze, h, i
+            h and i are for recursion purposes
+        returns cntr.
+    
+    */
 
     public static int countPlanned(int[][] maze, int h, int i){
         int cntr = 0;
@@ -624,28 +812,12 @@ public class Main{
         }
     }
 
-    public static boolean in(ArrayList<Integer[]> a, int[] element, int h){
-        /*
-        for (int h = 0; h < a.size(); h++){
-            if (a.get(h)[0] == element[0] && a.get(h)[1] == element[1]){
-                return true;
-            }
-        }
-        return false;
-        */
-        if (h == a.size()){
-            return false;
-        }
-
-        if (a.get(h)[0] == element[0] && a.get(h)[1] == element[1]){
-            return true;
-        }
-
-
-        h++;
-        return in(a, element, h);
-    }
-
+    /*boolean in
+        checks if an integer element is in an arrayList
+        params: a, element, h
+            h is for recursion purposes.
+        returns: true or false
+    */
     public static boolean in(ArrayList<Integer> a, Integer element, int h){
         /*
         for (int h = 0; h < a.size(); h++){
