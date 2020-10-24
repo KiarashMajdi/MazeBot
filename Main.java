@@ -227,7 +227,10 @@ public class Main{
             System.out.println();
             System.out.println();
             System.out.println("#####################################");
+            
         }
+        System.out.println("Press Enter to close!");
+        new Scanner(System.in).nextLine();
 
     }
 
